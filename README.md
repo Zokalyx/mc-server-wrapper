@@ -5,6 +5,7 @@
 - `start` and `stop` Discord commands, only callable by admins
 - `admin_id_list` in configuration file
 - dynamic Discord status (online for server online, idle for server offline)
+- `auto_start` in configuration file
 
 <br>
 
