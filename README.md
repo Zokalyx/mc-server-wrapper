@@ -3,9 +3,11 @@
 ## Extra Features
 
 - `start` and `stop` Discord commands, only callable by admins
+- `help` command
 - `admin_id_list` in configuration file
 - dynamic Discord status (online for server online, idle for server offline)
 - `auto_start` in configuration file
+- `command_prefix` in configuration file
 
 <br>
 
