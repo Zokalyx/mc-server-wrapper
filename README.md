@@ -1,3 +1,7 @@
+# Forked from [Cldfire's repo](https://github.com/Cldfire/mc-server-wrapper)
+
+<hr>
+
 # mc-server-wrapper
 
 ![CI](https://github.com/Cldfire/mc-server-wrapper/workflows/CI/badge.svg)
