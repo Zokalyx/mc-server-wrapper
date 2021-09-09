@@ -164,6 +164,7 @@ pub struct Discord {
     pub token: String,
     pub channel_id: u64,
     pub update_status: bool,
+    pub admin_id_list: Vec<u64>,
 }
 
 impl Default for Discord {
@@ -173,6 +174,7 @@ impl Default for Discord {
             token: "".into(),
             channel_id: 0,
             update_status: true,
+            admin_id_list: vec![],
         }
     }
 }

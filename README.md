@@ -2,9 +2,15 @@
 
 ## Extra Features
 
-- `start` and `stop` commands
+- `start` and `stop` Discord commands, only callable by admins
+- `admin_id_list` in configuration file
+- dynamic Discord status (online for server online, idle for server offline)
+
+<br>
 
 <hr>
+
+<br>
 
 # mc-server-wrapper
 

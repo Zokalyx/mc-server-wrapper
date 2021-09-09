@@ -9,7 +9,8 @@ use tokio::sync::{mpsc, Mutex};
 use once_cell::sync::OnceCell;
 use scopeguard::defer;
 
-use twilight_model::id::ChannelId;
+use twilight_model::id::UserId;
+use twilight_model::{gateway::presence::Status, id::ChannelId};
 
 use mc_server_wrapper_lib::{
     communication::*, parse::*, McServerConfig, McServerManager, CONSOLE_MSG_LOG_TARGET,
@@ -146,6 +147,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 ChannelId(discord_config.channel_id),
                 mc_cmd_sender.clone(),
                 discord_config.update_status,
+                discord_config.admin_id_list.iter().map(|id| UserId(*id)).collect(),
             )
             .await
             .with_context(|| "Failed to connect to Discord")?
@@ -190,10 +192,13 @@ async fn main() -> Result<(), anyhow::Error> {
 
                                 let mut online_players = ONLINE_PLAYERS.get().unwrap().lock().await;
                                 online_players.remove(&name);
-                                discord.clone().update_status(format_online_players(
-                                    &online_players,
-                                    OnlinePlayerFormat::BotStatus
-                                ));
+                                discord.clone().update_status(
+                                    format_online_players(
+                                        &online_players,
+                                        OnlinePlayerFormat::BotStatus,
+                                    ),
+                                    Status::Online
+                                );
                             },
                             ConsoleMsgSpecific::PlayerLogin { name, .. } => {
                                 discord.clone().send_channel_msg(format!(
@@ -203,10 +208,13 @@ async fn main() -> Result<(), anyhow::Error> {
 
                                 let mut online_players = ONLINE_PLAYERS.get().unwrap().lock().await;
                                 online_players.insert(name, OnlinePlayerInfo::default());
-                                discord.clone().update_status(format_online_players(
-                                    &online_players,
-                                    OnlinePlayerFormat::BotStatus
-                                ));
+                                discord.clone().update_status(
+                                    format_online_players(
+                                        &online_players,
+                                        OnlinePlayerFormat::BotStatus,
+                                    ),
+                                    Status::Online
+                                );
                             },
                             ConsoleMsgSpecific::PlayerMsg { name, msg } => {
                                 discord.clone().send_channel_msg(format!(
@@ -224,10 +232,13 @@ async fn main() -> Result<(), anyhow::Error> {
                             },
                             ConsoleMsgSpecific::FinishedLoading { .. } => {
                                 let online_players = ONLINE_PLAYERS.get().unwrap().lock().await;
-                                discord.clone().update_status(format_online_players(
-                                    &online_players,
-                                    OnlinePlayerFormat::BotStatus
-                                ));
+                                discord.clone().update_status(
+                                    format_online_players(
+                                        &online_players,
+                                        OnlinePlayerFormat::BotStatus
+                                    ),
+                                    Status::Online
+                                );
                             },
                             _ => {}
                         }
@@ -293,10 +304,10 @@ async fn main() -> Result<(), anyhow::Error> {
 
                             if sent_restart_command {
                                 discord.clone().send_channel_msg("Restarting the Minecraft server...");
-                                discord.clone().update_status("server is restarting");
+                                discord.clone().update_status("server is restarting", Status::Online);
                                 info!("Restarting server...");
                             } else {
-                                discord.clone().update_status("server is offline");
+                                discord.clone().update_status("server is offline", Status::Idle);
                                 info!("Start the Minecraft server back up with `start` or shutdown the wrapper with `stop`");
                             }
                         }

@@ -42,10 +42,11 @@ pub async fn setup_discord(
     bridge_channel_id: ChannelId,
     mc_cmd_sender: Sender<ServerCommand>,
     allow_status_updates: bool,
+    admin_id_list: Vec<UserId>,
 ) -> Result<DiscordBridge, anyhow::Error> {
     info!("Setting up Discord");
     let (discord, mut events) =
-        DiscordBridge::new(token, bridge_channel_id, allow_status_updates).await?;
+        DiscordBridge::new(token, bridge_channel_id, allow_status_updates, admin_id_list).await?;
 
     let discord_clone = discord.clone();
     tokio::spawn(async move {
@@ -89,6 +90,8 @@ pub struct DiscordBridge {
     bridge_channel_id: ChannelId,
     /// If set to `false` calls to `update_status()` will be no-ops
     allow_status_updates: bool,
+    /// The IDs of the admins that can start and stop the server
+    admin_id_list: Vec<UserId>,
 }
 
 // Groups together optionally-present things
@@ -110,6 +113,7 @@ impl DiscordBridge {
         token: String,
         bridge_channel_id: ChannelId,
         allow_status_updates: bool,
+        admin_id_list: Vec<UserId>,
     ) -> Result<(Self, Events), anyhow::Error> {
         let (cluster, events) = Cluster::builder(
             &token,
@@ -137,6 +141,7 @@ impl DiscordBridge {
                 }),
                 bridge_channel_id,
                 allow_status_updates,
+                admin_id_list,
             },
             events,
         ))
@@ -148,6 +153,7 @@ impl DiscordBridge {
             inner: None,
             bridge_channel_id: ChannelId(0),
             allow_status_updates: false,
+            admin_id_list: vec![],
         }
     }
 
@@ -279,11 +285,22 @@ impl DiscordBridge {
                                 self.clone().send_channel_msg(response);
                             }
                             Command { name: "start", .. } => {
-                                info!("Starting the Minecraft server");
-                                mc_cmd_sender.send(ServerCommand::StartServer { config: None }).await.unwrap();
+                                // Only allow admins
+                                if self.admin_id_list.contains(&msg.author.id) {
+                                    info!("Starting the Minecraft server");
+                                    mc_cmd_sender.send(ServerCommand::StartServer { config: None }).await.unwrap();  
+                                } else {
+                                    self.clone().send_channel_msg(String::from("You do not have permission to use this command"));
+                                }
                             }
                             Command { name: "stop", .. } => {
-                                mc_cmd_sender.send(ServerCommand::StopServer { forever: false }).await.unwrap();
+                                // Only allow admins
+                                if self.admin_id_list.contains(&msg.author.id) {
+                                    info!("Stopping the Minecraft server");
+                                    mc_cmd_sender.send(ServerCommand::StopServer { forever: false }).await.unwrap();
+                                } else {
+                                    self.clone().send_channel_msg(String::from("You do not have permission to use this command"));
+                                }
                             }
                             _ => {}
                         }
@@ -539,6 +556,7 @@ impl DiscordBridge {
     pub fn update_status<T: Into<String> + Send + 'static>(
         self,
         text: T,
+        status: Status,
     ) -> tokio::task::JoinHandle<()> {
         tokio::spawn(async move {
             if !self.allow_status_updates {
@@ -555,7 +573,7 @@ impl DiscordBridge {
                                     vec![activity(text.clone())],
                                     false,
                                     None,
-                                    Status::Online,
+                                    status,
                                 )
                                 .unwrap(),
                             )
