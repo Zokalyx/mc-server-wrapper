@@ -122,22 +122,26 @@ async fn main() -> Result<(), anyhow::Error> {
     )
     .with_context(|| "Failed to set up logging")?;
 
-    let mc_config = McServerConfig::new(
+    let mut mc_config = Some(McServerConfig::new(
         config.minecraft.server_path.clone(),
         config.minecraft.memory,
         config.minecraft.jvm_flags,
         false,
-    );
+    ));
     let (mc_server, mc_cmd_sender, mut mc_event_receiver) = McServerManager::new();
+    let mut last_start_time = Instant::now();
 
-    info!("Starting the Minecraft server");
+    if config.minecraft.auto_start {
+        info!("Starting the Minecraft server");
     mc_cmd_sender
         .send(ServerCommand::StartServer {
-            config: Some(mc_config),
+            config: mc_config.clone(),
         })
         .await
         .unwrap();
-    let mut last_start_time = Instant::now();
+    } else {
+        info!("Start the Minecraft server back up with `start` or shutdown the wrapper with `stop`");
+    }
 
     // TODO: start drawing UI before setting up discord
     let discord = if let Some(discord_config) = config.discord {
@@ -352,7 +356,7 @@ async fn main() -> Result<(), anyhow::Error> {
                                         match tui_state.logs_state.input_state.value() {
                                             "start" => {
                                                 info!("Starting the Minecraft server");
-                                                mc_cmd_sender.send(ServerCommand::StartServer { config: None }).await.unwrap();
+                                                mc_cmd_sender.send(ServerCommand::StartServer { config: mc_config.take() }).await.unwrap();
                                                 last_start_time = Instant::now();
                                             },
                                             "stop" => {

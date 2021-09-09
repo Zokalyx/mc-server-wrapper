@@ -580,7 +580,7 @@ impl DiscordBridge {
                             .await
                         {
                             Ok(()) => {}
-                            Err(e) => warn!("Failed to update bot's status: {}", e),
+                            Err(e) => warn!("Failed to update bot's status: {}\nMake sure you have followed the [Discord bridge setup instructions](https://github.com/Cldfire/mc-server-wrapper#discord-bridge-setup) and that your configuration file is properly configured", e),
                         }
                     }
                 }

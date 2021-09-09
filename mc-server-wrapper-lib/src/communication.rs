@@ -66,6 +66,10 @@ pub enum ServerCommand {
     /// listening for commands and gracefully shutdown everything related to
     /// it.
     StopServer { forever: bool },
+    /// Setup the Minecraft server configuration
+    ///
+    /// Use this to setup the configuration without starting the server
+    SetupServer { config: McServerConfig }
 }
 
 /// Reasons that a Minecraft server stopped running

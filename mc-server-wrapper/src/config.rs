@@ -145,6 +145,8 @@ pub struct Minecraft {
     pub memory: u16,
     /// Custom flags to pass to the JVM
     pub jvm_flags: Option<String>,
+    /// Auto start
+    pub auto_start: bool,
 }
 
 impl Default for Minecraft {
@@ -153,6 +155,7 @@ impl Default for Minecraft {
             server_path: "./server.jar".into(),
             memory: 1024,
             jvm_flags: None,
+            auto_start: false,
         }
     }
 }
@@ -170,7 +173,7 @@ pub struct Discord {
 impl Default for Discord {
     fn default() -> Self {
         Self {
-            enable_bridge: false,
+            enable_bridge: true,
             token: "".into(),
             channel_id: 0,
             update_status: true,

@@ -239,6 +239,42 @@ impl McServerManager {
                             break;
                         }
                     }
+                    SetupServer { config } => {
+                        if self.running().await {
+                            continue;
+                        }
+
+                        let (child, rx) = match McServerInternal::setup_server(&config) {
+                            Ok((internal, child, rx)) => {
+                                *self.internal.lock().await = Some(internal);
+                                (child, rx)
+                            }
+                            Err(e) => {
+                                event_sender
+                                    .send(ServerEvent::StartServerResult(Err(e)))
+                                    .await
+                                    .unwrap();
+                                continue;
+                            }
+                        };
+
+                        let event_sender_clone = event_sender.clone();
+                        let internal_clone = self.internal.clone();
+
+                        // Spawn a task to drive the server process to completion
+                        // and send an event when it exits
+                        tokio::spawn(async move {
+                            let event_sender = event_sender_clone;
+                            let ret =
+                                McServerInternal::run_server(child, rx, event_sender.clone()).await;
+                            let _ = internal_clone.lock().await.take();
+
+                            event_sender
+                                .send(ServerStopped(ret.0, ret.1))
+                                .await
+                                .unwrap();
+                        });
+                    }
                 }
             }
         });
