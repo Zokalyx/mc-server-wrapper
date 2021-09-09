@@ -178,6 +178,8 @@ impl DiscordBridge {
 
         config.add_command("stop", false);
 
+        config.add_command("help", false);
+
         // TODO: make this configurable
         config.add_prefix(prefix);
 
@@ -303,6 +305,9 @@ impl DiscordBridge {
                                 } else {
                                     self.clone().send_channel_msg(String::from("You do not have permission to use this command"));
                                 }
+                            }
+                            Command { name: "help", .. } => {
+                                self.clone().send_channel_msg(String::from("Available commands:\n`start` and `stop` (admin only)\n`list`"));
                             }
                             _ => {}
                         }
