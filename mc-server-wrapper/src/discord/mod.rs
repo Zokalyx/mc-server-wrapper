@@ -43,6 +43,7 @@ pub async fn setup_discord(
     mc_cmd_sender: Sender<ServerCommand>,
     allow_status_updates: bool,
     admin_id_list: Vec<UserId>,
+    command_prefix: String,
 ) -> Result<DiscordBridge, anyhow::Error> {
     info!("Setting up Discord");
     let (discord, mut events) =
@@ -51,7 +52,7 @@ pub async fn setup_discord(
     let discord_clone = discord.clone();
     tokio::spawn(async move {
         let discord = discord_clone;
-        let cmd_parser = DiscordBridge::command_parser();
+        let cmd_parser = DiscordBridge::command_parser(command_prefix);
 
         // For all received Discord events, map the event to a `ServerCommand`
         // (if necessary) and send it to the Minecraft server
@@ -168,7 +169,7 @@ impl DiscordBridge {
     }
 
     /// Constructs a command parser for Discord commands
-    pub fn command_parser<'a>() -> Parser<'a> {
+    pub fn command_parser<'a>(prefix: String) -> Parser<'a> {
         let mut config = CommandParserConfig::new();
 
         config.add_command("list", false);
@@ -178,7 +179,7 @@ impl DiscordBridge {
         config.add_command("stop", false);
 
         // TODO: make this configurable
-        config.add_prefix("!mc ");
+        config.add_prefix(prefix);
 
         Parser::new(config)
     }

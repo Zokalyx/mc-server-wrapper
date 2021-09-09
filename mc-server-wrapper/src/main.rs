@@ -152,6 +152,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 mc_cmd_sender.clone(),
                 discord_config.update_status,
                 discord_config.admin_id_list.iter().map(|id| UserId(*id)).collect(),
+                discord_config.command_prefix
             )
             .await
             .with_context(|| "Failed to connect to Discord")?

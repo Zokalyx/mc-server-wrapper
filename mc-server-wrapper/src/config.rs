@@ -168,6 +168,7 @@ pub struct Discord {
     pub channel_id: u64,
     pub update_status: bool,
     pub admin_id_list: Vec<u64>,
+    pub command_prefix: String,
 }
 
 impl Default for Discord {
@@ -178,6 +179,7 @@ impl Default for Discord {
             channel_id: 0,
             update_status: true,
             admin_id_list: vec![],
+            command_prefix: "!mc ".into(),
         }
     }
 }
