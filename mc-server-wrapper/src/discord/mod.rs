@@ -167,6 +167,10 @@ impl DiscordBridge {
 
         config.add_command("list", false);
 
+        config.add_command("start", false);
+
+        config.add_command("stop", false);
+
         // TODO: make this configurable
         config.add_prefix("!mc ");
 
@@ -273,6 +277,13 @@ impl DiscordBridge {
                                 };
 
                                 self.clone().send_channel_msg(response);
+                            }
+                            Command { name: "start", .. } => {
+                                info!("Starting the Minecraft server");
+                                mc_cmd_sender.send(ServerCommand::StartServer { config: None }).await.unwrap();
+                            }
+                            Command { name: "stop", .. } => {
+                                mc_cmd_sender.send(ServerCommand::StopServer { forever: false }).await.unwrap();
                             }
                             _ => {}
                         }
