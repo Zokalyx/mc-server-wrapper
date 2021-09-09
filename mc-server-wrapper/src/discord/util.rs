@@ -190,10 +190,10 @@ pub fn format_online_players(
             ),
         },
         OnlinePlayerFormat::BotStatus => match online_players.len() {
-            0 => "Minecraft with nobody".into(),
-            1 => format!("Minecraft with {}", online_players_vec[0]),
+            0 => "with nobody".into(),
+            1 => format!("with {}", online_players_vec[0]),
             2 => format!(
-                "Minecraft with {} and {}",
+                "with {} and {}",
                 online_players_vec[0], online_players_vec[1]
             ),
             _ => {
@@ -202,7 +202,7 @@ pub fn format_online_players(
                 // player names as possible and then resort to a (+ __ more) at the end
                 // for any names that won't fit in the character limit
                 let mut string = String::with_capacity(128);
-                string.push_str("Minecraft with ");
+                string.push_str("with ");
 
                 let mut i = 0;
                 for name in &online_players_vec {

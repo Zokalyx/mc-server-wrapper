@@ -311,7 +311,7 @@ async fn main() -> Result<(), anyhow::Error> {
                                 discord.clone().update_status("server is restarting", Status::Online);
                                 info!("Restarting server...");
                             } else {
-                                discord.clone().update_status("server is offline", Status::Idle);
+                                discord.clone().update_status("", Status::Idle);
                                 info!("Start the Minecraft server back up with `start` or shutdown the wrapper with `stop`");
                             }
                         }

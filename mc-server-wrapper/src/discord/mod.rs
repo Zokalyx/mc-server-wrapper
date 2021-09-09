@@ -226,6 +226,7 @@ impl DiscordBridge {
         match event {
             (_, Event::Ready(_)) => {
                 info!("Discord bridge online");
+                self.clone().update_status("", Status::Idle);
             }
             (shard_id, Event::GuildCreate(guild)) => {
                 // Log the name of the channel we're bridging to as well if it's
