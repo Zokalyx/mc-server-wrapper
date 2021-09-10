@@ -9,6 +9,10 @@
 - `auto_start` in configuration file
 - `command_prefix` in configuration file
 
+## `es-version`
+
+- Contains Spanish text messages for discord users and minecraft players instead of English ones
+
 <br>
 
 <hr>
