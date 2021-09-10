@@ -178,22 +178,22 @@ pub fn format_online_players(
 
     match format {
         OnlinePlayerFormat::CommandResponse { short } => match online_players.len() {
-            0 => "Nobody is playing Minecraft".into(),
-            1 => format!("{} is playing Minecraft", online_players_vec[0]),
+            0 => "No hay nadie en el servidor".into(),
+            1 => format!("{} está jugando", online_players_vec[0]),
             2 => format!(
-                "{} and {} are playing Minecraft",
+                "{} y {} están jugando",
                 online_players_vec[0], online_players_vec[1]
             ),
             _ => format!(
-                "{} are playing Minecraft",
+                "{} están jugando",
                 online_players_list(&online_players_vec, short)
             ),
         },
         OnlinePlayerFormat::BotStatus => match online_players.len() {
-            0 => "with nobody".into(),
-            1 => format!("with {}", online_players_vec[0]),
+            0 => "Minecraft, vacío".into(),
+            1 => format!("Minecraft con {}", online_players_vec[0]),
             2 => format!(
-                "with {} and {}",
+                "Minecraft con {} y {}",
                 online_players_vec[0], online_players_vec[1]
             ),
             _ => {
@@ -202,7 +202,7 @@ pub fn format_online_players(
                 // player names as possible and then resort to a (+ __ more) at the end
                 // for any names that won't fit in the character limit
                 let mut string = String::with_capacity(128);
-                string.push_str("with ");
+                string.push_str("con ");
 
                 let mut i = 0;
                 for name in &online_players_vec {
@@ -228,7 +228,7 @@ pub fn format_online_players(
                     }
 
                     if i == online_players_vec.len() - 1 {
-                        string.push_str("and ");
+                        string.push_str("y ");
                         string.push_str(name);
                     } else {
                         string.push_str(name);
@@ -243,11 +243,11 @@ pub fn format_online_players(
                     // We need the (+ ___ more) piece
                     //
                     // Note that we have at least two names left when we've gotten here
-                    string.push_str("and ");
+                    string.push_str("y ");
                     string.push_str(&online_players_vec[i]);
                     i += 1;
 
-                    string.push_str(&format!(" (+ {} more)", online_players_vec.len() - i));
+                    string.push_str(&format!(" (+ {} más)", online_players_vec.len() - i));
                 }
 
                 string
@@ -260,12 +260,12 @@ pub fn format_online_players(
 fn online_players_list(online_players: &[String], short: bool) -> String {
     if short {
         let mut string = format!(
-            "{}, {}, and {}",
+            "{}, {}, y {}",
             online_players[0], online_players[1], online_players[2]
         );
 
         if online_players.len() > 3 {
-            string.push_str(&format!(" (+ {} more)", online_players.len() - 3));
+            string.push_str(&format!(" (+ {} más)", online_players.len() - 3));
         }
 
         string
@@ -276,7 +276,7 @@ fn online_players_list(online_players: &[String], short: bool) -> String {
             string.push_str(&format!("{}, ", player));
         }
 
-        string.push_str(&format!("and {}", online_players.last().unwrap()));
+        string.push_str(&format!("y {}", online_players.last().unwrap()));
         string
     }
 }

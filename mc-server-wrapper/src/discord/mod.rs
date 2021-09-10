@@ -294,7 +294,7 @@ impl DiscordBridge {
                                     info!("Starting the Minecraft server");
                                     mc_cmd_sender.send(ServerCommand::StartServer { config: None }).await.unwrap();  
                                 } else {
-                                    self.clone().send_channel_msg(String::from("You do not have permission to use this command"));
+                                    self.clone().send_channel_msg(String::from("No tenés permiso para ejecutar este comando"));
                                 }
                             }
                             Command { name: "stop", .. } => {
@@ -303,11 +303,11 @@ impl DiscordBridge {
                                     info!("Stopping the Minecraft server");
                                     mc_cmd_sender.send(ServerCommand::StopServer { forever: false }).await.unwrap();
                                 } else {
-                                    self.clone().send_channel_msg(String::from("You do not have permission to use this command"));
+                                    self.clone().send_channel_msg(String::from("No tenés permiso para ejecutar este comando"));
                                 }
                             }
                             Command { name: "help", .. } => {
-                                self.clone().send_channel_msg(String::from("Available commands:\n`start` and `stop` (admin only)\n`list`"));
+                                self.clone().send_channel_msg(String::from("Comandos disponibles:\n`start` y `stop` (solo admins)\n`list`"));
                             }
                             _ => {}
                         }
@@ -347,9 +347,9 @@ impl DiscordBridge {
         for attachment in &msg.attachments {
             let type_str = if attachment.height.is_some() {
                 // TODO: it could also be a video....
-                "image"
+                "una imagen"
             } else {
-                "file"
+                "un archivo"
             };
 
             let tellraw_msg = tellraw_prefix()
@@ -361,7 +361,7 @@ impl DiscordBridge {
                 .italic(true)
                 .color(Color::Gray)
                 .hover_show_text(&format!(
-                    "Click to open the {} in your web browser",
+                    "Clickeá para abrir {} en tu navegador",
                     type_str
                 ))
                 .click_open_url(&attachment.url)
@@ -370,7 +370,7 @@ impl DiscordBridge {
             ConsoleMsg::new(
                 ConsoleMsgType::Info,
                 format!(
-                    "{}{} uploaded {}: {}",
+                    "{}{} subió {}: {}",
                     CHAT_PREFIX, author_display_name, type_str, attachment.url
                 ),
             )
@@ -490,7 +490,7 @@ impl DiscordBridge {
                 .underlined(true)
                 .italic(true)
                 .color(Color::Gray)
-                .hover_show_text("Click to open the link in your web browser")
+                .hover_show_text("Clickeá para abrir el link en tu navegador")
                 .click_open_url(embed.url.as_ref().unwrap())
                 .then(Payload::text("\""))
                 .italic(true)

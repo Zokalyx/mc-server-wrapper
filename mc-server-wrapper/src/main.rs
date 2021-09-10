@@ -191,7 +191,7 @@ async fn main() -> Result<(), anyhow::Error> {
                         match specific_msg {
                             ConsoleMsgSpecific::PlayerLogout { name } => {
                                 discord.clone().send_channel_msg(format!(
-                                    "_**{}** left the game_",
+                                    "_**{}** dejó el servidor_",
                                     sanitize_for_markdown(&name)
                                 ));
 
@@ -207,7 +207,7 @@ async fn main() -> Result<(), anyhow::Error> {
                             },
                             ConsoleMsgSpecific::PlayerLogin { name, .. } => {
                                 discord.clone().send_channel_msg(format!(
-                                    "_**{}** joined the game_",
+                                    "_**{}** se unió al servidor_",
                                     sanitize_for_markdown(&name)
                                 ));
 
