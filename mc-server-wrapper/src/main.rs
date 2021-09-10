@@ -122,12 +122,12 @@ async fn main() -> Result<(), anyhow::Error> {
     )
     .with_context(|| "Failed to set up logging")?;
 
-    let mut mc_config = Some(McServerConfig::new(
+    let mc_config = McServerConfig::new(
         config.minecraft.server_path.clone(),
         config.minecraft.memory,
         config.minecraft.jvm_flags,
         false,
-    ));
+    );
     let (mc_server, mc_cmd_sender, mut mc_event_receiver) = McServerManager::new();
     let mut last_start_time = Instant::now();
 
@@ -135,7 +135,7 @@ async fn main() -> Result<(), anyhow::Error> {
         info!("Starting the Minecraft server");
     mc_cmd_sender
         .send(ServerCommand::StartServer {
-            config: mc_config.clone(),
+            config: Some(mc_config.clone()),
         })
         .await
         .unwrap();
@@ -152,7 +152,8 @@ async fn main() -> Result<(), anyhow::Error> {
                 mc_cmd_sender.clone(),
                 discord_config.update_status,
                 discord_config.admin_id_list.iter().map(|id| UserId(*id)).collect(),
-                discord_config.command_prefix
+                discord_config.command_prefix,
+                mc_config.clone(),
             )
             .await
             .with_context(|| "Failed to connect to Discord")?
@@ -357,7 +358,7 @@ async fn main() -> Result<(), anyhow::Error> {
                                         match tui_state.logs_state.input_state.value() {
                                             "start" => {
                                                 info!("Starting the Minecraft server");
-                                                mc_cmd_sender.send(ServerCommand::StartServer { config: mc_config.take() }).await.unwrap();
+                                                mc_cmd_sender.send(ServerCommand::StartServer { config: Some(mc_config.clone()) }).await.unwrap();
                                                 last_start_time = Instant::now();
                                             },
                                             "stop" => {
