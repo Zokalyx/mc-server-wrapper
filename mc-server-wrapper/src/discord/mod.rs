@@ -16,7 +16,7 @@ use twilight_model::{
     id::{ChannelId, GuildId, UserId},
 };
 
-use mc_server_wrapper_lib::{communication::*, parse::*};
+use mc_server_wrapper_lib::{communication::*, parse::*, McServerConfig};
 use minecraft_chat::{Color, Payload};
 
 use util::{
@@ -44,6 +44,7 @@ pub async fn setup_discord(
     allow_status_updates: bool,
     admin_id_list: Vec<UserId>,
     command_prefix: String,
+    mc_config: McServerConfig,
 ) -> Result<DiscordBridge, anyhow::Error> {
     info!("Setting up Discord");
     let (discord, mut events) =
@@ -64,9 +65,10 @@ pub async fn setup_discord(
             // Update the cache
             discord.inner.as_ref().unwrap().cache.update(&e.1);
 
+            let mc_config_clone = mc_config.clone();
             tokio::spawn(async move {
                 if let Err(e) = discord
-                    .handle_discord_event(e, cmd_parser_clone, cmd_sender_clone)
+                    .handle_discord_event(e, cmd_parser_clone, cmd_sender_clone, mc_config_clone)
                     .await
                 {
                     warn!("Failed to handle Discord event: {}", e);
@@ -225,6 +227,7 @@ impl DiscordBridge {
         event: (u64, Event),
         cmd_parser: Parser<'_>,
         mc_cmd_sender: Sender<ServerCommand>,
+        mc_config: McServerConfig,
     ) -> Result<(), anyhow::Error> {
         match event {
             (_, Event::Ready(_)) => {
@@ -292,7 +295,8 @@ impl DiscordBridge {
                                 // Only allow admins
                                 if self.admin_id_list.contains(&msg.author.id) {
                                     info!("Starting the Minecraft server");
-                                    mc_cmd_sender.send(ServerCommand::StartServer { config: None }).await.unwrap();  
+                                    self.clone().send_channel_msg(String::from("Starting server..."));
+                                    mc_cmd_sender.send(ServerCommand::StartServer { config: Some(mc_config) }).await.unwrap();  
                                 } else {
                                     self.clone().send_channel_msg(String::from("You do not have permission to use this command"));
                                 }
@@ -301,6 +305,7 @@ impl DiscordBridge {
                                 // Only allow admins
                                 if self.admin_id_list.contains(&msg.author.id) {
                                     info!("Stopping the Minecraft server");
+                                    self.clone().send_channel_msg(String::from("Stopping server..."));
                                     mc_cmd_sender.send(ServerCommand::StopServer { forever: false }).await.unwrap();
                                 } else {
                                     self.clone().send_channel_msg(String::from("You do not have permission to use this command"));
