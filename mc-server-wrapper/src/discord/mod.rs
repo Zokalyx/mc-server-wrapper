@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use log::{debug, info, warn};
 
 use twilight_cache_inmemory::{model::CachedMember, InMemoryCache, ResourceType};
@@ -26,7 +28,7 @@ use util::{
 use crate::ONLINE_PLAYERS;
 use futures::{future, StreamExt};
 use std::collections::HashMap;
-use tokio::sync::mpsc::Sender;
+use tokio::sync::{mpsc::Sender, Mutex};
 
 mod message_span_iter;
 pub mod util;
@@ -45,10 +47,11 @@ pub async fn setup_discord(
     admin_id_list: Vec<UserId>,
     command_prefix: String,
     mc_config: McServerConfig,
+    startup_locked: Arc<Mutex<bool>>,
 ) -> Result<DiscordBridge, anyhow::Error> {
     info!("Setting up Discord");
     let (discord, mut events) =
-        DiscordBridge::new(token, bridge_channel_id, allow_status_updates, admin_id_list).await?;
+        DiscordBridge::new(token, bridge_channel_id, allow_status_updates, admin_id_list, startup_locked).await?;
 
     let discord_clone = discord.clone();
     tokio::spawn(async move {
@@ -95,6 +98,8 @@ pub struct DiscordBridge {
     allow_status_updates: bool,
     /// The IDs of the admins that can start and stop the server
     admin_id_list: Vec<UserId>,
+    /// The boolean that decides whether the server is locked
+    startup_locked: Arc<Mutex<bool>>,
 }
 
 // Groups together optionally-present things
@@ -117,6 +122,7 @@ impl DiscordBridge {
         bridge_channel_id: ChannelId,
         allow_status_updates: bool,
         admin_id_list: Vec<UserId>,
+        startup_locked: Arc<Mutex<bool>>,
     ) -> Result<(Self, Events), anyhow::Error> {
         let (cluster, events) = Cluster::builder(
             &token,
@@ -145,6 +151,7 @@ impl DiscordBridge {
                 bridge_channel_id,
                 allow_status_updates,
                 admin_id_list,
+                startup_locked,
             },
             events,
         ))
@@ -157,6 +164,7 @@ impl DiscordBridge {
             bridge_channel_id: ChannelId(0),
             allow_status_updates: false,
             admin_id_list: vec![],
+            startup_locked: Arc::new(Mutex::new(false)),
         }
     }
 
@@ -294,9 +302,15 @@ impl DiscordBridge {
                             Command { name: "start", .. } => {
                                 // Only allow admins
                                 if self.admin_id_list.contains(&msg.author.id) {
-                                    info!("Starting the Minecraft server");
-                                    self.clone().send_channel_msg(String::from("Starting server..."));
-                                    mc_cmd_sender.send(ServerCommand::StartServer { config: Some(mc_config) }).await.unwrap();  
+                                    // Only allow in unlocked mode
+                                    let lock = self.startup_locked.lock().await;
+                                    if *lock {
+                                        self.clone().send_channel_msg(String::from("Server is in locked mode and cannot be started"));
+                                    } else {
+                                        info!("Starting the Minecraft server");
+                                        self.clone().send_channel_msg(String::from("Starting server..."));
+                                        mc_cmd_sender.send(ServerCommand::StartServer { config: Some(mc_config) }).await.unwrap();  
+                                    }
                                 } else {
                                     self.clone().send_channel_msg(String::from("You do not have permission to use this command"));
                                 }

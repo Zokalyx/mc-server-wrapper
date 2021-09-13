@@ -8,6 +8,7 @@
 - dynamic Discord status (online for server online, idle for server offline)
 - `auto_start` in configuration file
 - `command_prefix` in configuration file
+- `lock` CLI command to stop discord users from starting server
 
 <br>
 
