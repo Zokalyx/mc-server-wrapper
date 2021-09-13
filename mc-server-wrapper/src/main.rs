@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, path::PathBuf, time::Instant};
+use std::{collections::BTreeMap, path::PathBuf, time::Instant, sync::Arc};
 
 use anyhow::Context;
 
@@ -91,6 +91,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let config_filepath = opt.config.clone();
     let mut config = Config::load(&config_filepath).await?;
     let mut notify_receiver = config.setup_watcher(config_filepath.clone());
+    let startup_locked = Arc::new(Mutex::new(false));
 
     if opt.gen_config {
         return Ok(());
@@ -154,6 +155,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 discord_config.admin_id_list.iter().map(|id| UserId(*id)).collect(),
                 discord_config.command_prefix,
                 mc_config.clone(),
+                Arc::clone(&startup_locked),
             )
             .await
             .with_context(|| "Failed to connect to Discord")?
@@ -245,6 +247,7 @@ async fn main() -> Result<(), anyhow::Error> {
                                     ),
                                     Status::Online
                                 );
+                                discord.clone().send_channel_msg("Server online!");
                             },
                             _ => {}
                         }
@@ -272,6 +275,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
                             // How we handle this depends on whether or not we asked the server to stop
                             if let Some(ShutdownReason::RequestedToStop) = reason {
+                                discord.clone().send_channel_msg("Server offline");
                                 match process_result {
                                     Ok(exit_status) => if exit_status.success() {
                                         info!("Minecraft server process exited successfully");
@@ -285,6 +289,7 @@ async fn main() -> Result<(), anyhow::Error> {
                                 }
                             } else {
                                 // We did not ask the server to stop
+                                discord.clone().send_channel_msg("Server crasheado :(");
                                 match process_result {
                                     Ok(exit_status) => {
                                         warn!("Minecraft server process exited with code {}", &exit_status);
@@ -357,12 +362,26 @@ async fn main() -> Result<(), anyhow::Error> {
                                         // https://docs.rs/clap/2.33.1/clap/struct.App.html#method.get_matches_from_safe
                                         match tui_state.logs_state.input_state.value() {
                                             "start" => {
+                                                let mut startup_lock_guard = startup_locked.lock().await;
+                                                *startup_lock_guard = false;
                                                 info!("Starting the Minecraft server");
                                                 mc_cmd_sender.send(ServerCommand::StartServer { config: Some(mc_config.clone()) }).await.unwrap();
                                                 last_start_time = Instant::now();
                                             },
                                             "stop" => {
                                                 mc_cmd_sender.send(ServerCommand::StopServer { forever: true }).await.unwrap();
+                                            },
+                                            "lock" => {
+                                                let mut startup_lock_guard = startup_locked.lock().await;
+                                                let is_locked = *startup_lock_guard;
+                                                if !is_locked {
+                                                    info!("Server is now locked and can't be opened remotely");
+                                                    discord.clone().update_status("", Status::DoNotDisturb);
+                                                } else {
+                                                    info!("Server is now unlocked and can be opened remotely");
+                                                    discord.clone().update_status("", Status::Idle);
+                                                }   
+                                                *startup_lock_guard = !is_locked;
                                             },
                                             _ => {}
                                         }
